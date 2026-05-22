@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AR 캐릭터 x LLM 인턴 합격 트래커</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-2: #f1efe8;
+    --text: #1a1a1a;
+    --text-2: #6b6b6b;
+    --text-3: #9b9b9b;
+    --border: rgba(0,0,0,0.08);
+    --border-2: rgba(0,0,0,0.15);
+    --accent: #534ab7;
+    --accent-bg: #eeedfe;
+    --teal: #0f6e56;
+    --teal-bg: #e1f5ee;
+    --coral: #993c1d;
+    --coral-bg: #faece7;
+    --blue: #185fa5;
+    --blue-bg: #e6f1fb;
+    --amber: #854f0b;
+    --amber-bg: #faeeda;
+    --pink: #993556;
+    --pink-bg: #fbeaf0;
+    --success: #3b6d11;
+    --success-bg: #eaf3de;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --surface: #252525;
+      --surface-2: #2d2d2d;
+      --text: #e8e8e8;
+      --text-2: #a0a0a0;
+      --text-3: #707070;
+      --border: rgba(255,255,255,0.08);
+      --border-2: rgba(255,255,255,0.15);
+      --accent: #7f77dd;
+      --accent-bg: #3c3489;
+      --teal: #5dcaa5;
+      --teal-bg: #085041;
+      --coral: #f0997b;
+      --coral-bg: #712b13;
+      --blue: #378add;
+      --blue-bg: #0c447c;
+      --amber: #ef9f27;
+      --amber-bg: #633806;
+      --pink: #ed93b1;
+      --pink-bg: #72243e;
+      --success: #97c459;
+      --success-bg: #27500a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 24px; }
+  h1 { font-size: 24px; font-weight: 500; margin-bottom: 8px; }
+  .subtitle { font-size: 14px; color: var(--text-2); }
+  .my-info {
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-top: 12px;
+    display: inline-block;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .tab {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--surface); color: var(--text); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+  }
+  .stat-label { font-size: 13px; color: var(--text-2); margin-bottom: 4px; }
+  .stat-value { font-size: 26px; font-weight: 500; }
+  .stat-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .week-header {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .week-nav select {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 0.5px solid var(--border-2);
+    color: var(--text);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button {
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 0.5px solid var(--border-2);
+    color: var(--text);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  button:hover { background: var(--surface-2); }
+  button:active { transform: scale(0.98); }
+  button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  button.primary:hover { opacity: 0.9; background: var(--accent); }
+  button.danger { color: var(--coral); }
+  .phase-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .phase-1 { background: var(--blue-bg); color: var(--blue); }
+  .phase-2 { background: var(--teal-bg); color: var(--teal); }
+  .phase-3 { background: var(--accent-bg); color: var(--accent); }
+  .phase-4 { background: var(--pink-bg); color: var(--pink); }
+  .phase-5 { background: var(--coral-bg); color: var(--coral); }
+  .week-goal { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+  .week-date { font-size: 13px; color: var(--text-2); margin-bottom: 4px; }
+  .week-context {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 50px;
+    text-align: right;
+  }
+  .tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .task:hover { border-color: var(--border-2); }
+  .task input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+  .task-text {
+    font-size: 14px;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .task-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    margin-right: 6px;
+    font-weight: 500;
+  }
+  .tag-core { background: var(--accent-bg); color: var(--accent); }
+  .tag-project { background: var(--teal-bg); color: var(--teal); }
+  .tag-coding { background: var(--blue-bg); color: var(--blue); }
+  .tag-career { background: var(--coral-bg); color: var(--coral); }
+  .tag-english { background: var(--amber-bg); color: var(--amber); }
+  .task.done .task-text {
+    text-decoration: line-through;
+    color: var(--text-3);
+  }
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .metric-input-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .metric-input-card label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .metric-input-card input {
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-2);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 500;
+    font-family: inherit;
+    outline: none;
+  }
+  .metric-input-card input:focus { border-bottom-color: var(--accent); }
+  .retro-section {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .retro-section label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg);
+    border: 0.5px solid var(--border-2);
+    color: var(--text);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .actions button { flex: 1; min-width: 140px; }
+  .phase-section { margin-bottom: 32px; }
+  .phase-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .phase-progress { font-size: 13px; color: var(--text-2); font-weight: 400; }
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  .week-tile {
+    padding: 12px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+  }
+  .week-tile:hover { border-color: var(--border-2); background: var(--surface-2); }
+  .week-tile-num { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+  .week-tile-goal {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .week-tile-bar {
+    height: 4px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .week-tile-fill {
+    height: 100%;
+    transition: width 0.3s;
+  }
+  .week-tile-meta { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .chart-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .month-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 180px;
+    padding: 0 8px;
+  }
+  .month-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .month-bar-track {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background: var(--surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .month-bar-fill {
+    width: 100%;
+    background: var(--accent);
+    border-radius: 4px 4px 0 0;
+    min-height: 2px;
+    transition: height 0.5s ease;
+  }
+  .month-bar-label { font-size: 11px; color: var(--text-2); }
+  .prompt-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .prompt-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .prompt-body {
+    font-size: 13px;
+    color: var(--text-2);
+    background: var(--bg);
+    padding: 12px;
+    border-radius: var(--radius);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 8px;
+  }
+  .copy-btn { font-size: 12px; padding: 6px 12px; }
+  .project-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .project-card h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .project-card .meta {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 12px;
+  }
+  .info-box {
+    background: var(--amber-bg);
+    color: var(--amber);
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  footer {
+    text-align: center;
+    padding: 32px 0 16px;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  @media (max-width: 600px) {
+    body { padding: 16px 12px; }
+    h1 { font-size: 20px; }
+    .stat-value { font-size: 22px; }
+    .week-nav { flex-direction: column; align-items: stretch; }
+    .week-nav select { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🎯 AR 캐릭터 × LLM 인턴 합격 트래커</h1>
+  <p class="subtitle">동아대 AI 3학년 맞춤 · 2026.05 → 2027.03</p>
+  <div class="my-info">갤노트20 · Python ○ · C++ 홍정모 ○ · 백준 골드5 · Unity 기초 ○ · ML/DL 수업 ○</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="dashboard">📊 대시보드</button>
+  <button class="tab" data-tab="week">📋 주차별</button>
+  <button class="tab" data-tab="overview">🗓️ 전체 보기</button>
+  <button class="tab" data-tab="project">🎮 메인 프로젝트</button>
+  <button class="tab" data-tab="stats">📈 통계</button>
+  <button class="tab" data-tab="prompts">🤖 프롬프트</button>
+</div>
+
+<!-- 대시보드 -->
+<div class="tab-content active" id="tab-dashboard">
+  <div class="info-box">
+    💡 <strong>당신을 위한 맞춤 전략</strong>: 기초가 탄탄해서 Phase 1을 4주로 압축했습니다. 8월부터 메인 프로젝트 시작, 9월에 하반기 인턴 도전, 2027년 3월에 상반기 공채 본격 도전합니다.
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">전체 진도</div>
+      <div class="stat-value" id="total-progress">0%</div>
+      <div class="stat-sub" id="total-progress-sub">0 / 0 과제</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">현재 주차</div>
+      <div class="stat-value" id="current-week">Week 1</div>
+      <div class="stat-sub" id="current-phase">Phase 1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">누적 학습 시간</div>
+      <div class="stat-value" id="total-hours">0h</div>
+      <div class="stat-sub">목표 1,200h</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">누적 커밋</div>
+      <div class="stat-value" id="total-commits">0</div>
+      <div class="stat-sub">목표 700회</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">블로그 글</div>
+      <div class="stat-value" id="total-blogs">0</div>
+      <div class="stat-sub">목표 30편</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">코테 문제</div>
+      <div class="stat-value" id="total-problems">0</div>
+      <div class="stat-sub">목표 400문제</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Phase별 진행률</div>
+    <div id="phase-progress-list"></div>
+  </div>
+</div>
+
+<!-- 주차별 -->
+<div class="tab-content" id="tab-week">
+  <div class="week-header">
+    <div class="week-nav">
+      <select id="week-select"></select>
+      <button id="prev-week">← 이전</button>
+      <button id="next-week">다음 →</button>
+    </div>
+    <div>
+      <span class="phase-badge" id="phase-badge"></span>
+      <div class="week-goal" id="week-goal"></div>
+      <div class="week-date" id="week-date"></div>
+      <div class="week-context" id="week-context"></div>
+    </div>
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="week-progress-fill"></div></div>
+      <div class="progress-text" id="week-progress-text">0 / 0</div>
+    </div>
+  </div>
+
+  <div class="tasks" id="tasks-list"></div>
+
+  <div class="metrics-grid">
+    <div class="metric-input-card">
+      <label>학습 시간 (h)</label>
+      <input type="number" id="metric-hours" min="0" max="100" step="0.5" value="0">
+    </div>
+    <div class="metric-input-card">
+      <label>GitHub 커밋</label>
+      <input type="number" id="metric-commits" min="0" max="200" value="0">
+    </div>
+    <div class="metric-input-card">
+      <label>블로그 글</label>
+      <input type="number" id="metric-blogs" min="0" max="20" value="0">
+    </div>
+    <div class="metric-input-card">
+      <label>코테 푼 문제</label>
+      <input type="number" id="metric-problems" min="0" max="100" value="0">
+    </div>
+  </div>
+
+  <div class="retro-section">
+    <label for="retro">📝 주간 회고 (잘된 점 / 막힌 점 / 다음 주 개선)</label>
+    <textarea id="retro" placeholder="이번 주를 돌아보며 자유롭게 적어보세요..."></textarea>
+  </div>
+
+  <div class="actions">
+    <button id="copy-retro-prompt" class="primary">📋 Claude 회고 프롬프트 복사</button>
+    <button id="reset-week" class="danger">⟲ 이번 주 초기화</button>
+  </div>
+</div>
+
+<!-- 전체 보기 -->
+<div class="tab-content" id="tab-overview">
+  <div id="overview-container"></div>
+</div>
+
+<!-- 메인 프로젝트 -->
+<div class="tab-content" id="tab-project">
+  <div class="info-box">
+    🎮 <strong>메인 프로젝트</strong>: AR 캐릭터 × LLM 대화 앱 — 갤노트20에서 동작하는 온디바이스 AI 캐릭터. <strong>Week 11(8월)부터 시작</strong>해서 Week 32(12월말)까지 22주간 진행합니다.
+  </div>
+
+  <div class="project-card">
+    <h3>📱 프로젝트 개요</h3>
+    <div class="meta">갤럭시 노트20 울트라 · Unity AR Foundation · 온디바이스 LLM · TTS</div>
+    <p style="font-size:14px; color:var(--text-2); line-height:1.6;">
+      카메라를 켜면 평면 위에 3D 캐릭터가 등장하고, 사용자 음성을 인식해서 캐릭터가 자연스럽게 대화하는 모바일 AR 앱. 클라우드 의존 없이 폰 안에서 LLM 추론까지 모두 처리.
+    </p>
+  </div>
+
+  <div class="project-card">
+    <h3>🎯 핵심 차별화 포인트 (자소서/면접용)</h3>
+    <ul style="font-size:14px; line-height:1.8; padding-left:20px; color:var(--text-2);">
+      <li><strong>온디바이스 LLM</strong> — 1~2B 파라미터 모델을 INT4 양자화로 폰에서 실행</li>
+      <li><strong>AR 통합</strong> — Unity AR Foundation으로 ARCore 활용</li>
+      <li><strong>실시간 대화</strong> — STT → LLM → TTS 파이프라인 5초 이내</li>
+      <li><strong>프라이버시 보존</strong> — 모든 처리가 디바이스 내부에서</li>
+      <li><strong>한국어 지원</strong> — 한국어 fine-tuned 모델 활용</li>
+    </ul>
+  </div>
+
+  <div class="project-card">
+    <h3>🛠️ 기술 스택</h3>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; font-size:13px;">
+      <div><strong>AR/3D</strong>: Unity 2022 LTS, AR Foundation, ARCore</div>
+      <div><strong>LLM</strong>: Gemma 2B / Qwen 2.5 1.5B, llama.cpp Android</div>
+      <div><strong>음성</strong>: Whisper Tiny (STT), Android TTS</div>
+      <div><strong>경량화</strong>: GGUF 4-bit 양자화, ONNX</div>
+      <div><strong>캐릭터</strong>: VRM 또는 Ready Player Me</div>
+      <div><strong>개발</strong>: Android Studio, Git LFS</div>
+    </div>
+  </div>
+
+  <div class="project-card">
+    <h3>📅 22주 마일스톤</h3>
+    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 0; color:var(--text-2);">Week 11-14 (8월)</td>
+        <td style="padding:8px 0;">기획 + 베이스라인 (Unity AR 캐릭터 표시)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 0; color:var(--text-2);">Week 15-18 (9월)</td>
+        <td style="padding:8px 0;">하반기 인턴 지원 + LLM 모바일 통합</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 0; color:var(--text-2);">Week 19-22 (10월)</td>
+        <td style="padding:8px 0;">음성 파이프라인 (STT/TTS) 통합</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 0; color:var(--text-2);">Week 23-26 (11월)</td>
+        <td style="padding:8px 0;">최적화 + 캐릭터 애니메이션</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0; color:var(--text-2);">Week 27-32 (12월)</td>
+        <td style="padding:8px 0;">UX + 문서화 + 데모 영상 + 블로그 시리즈</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="project-card">
+    <h3>⚠️ 갤노트20에서 예상되는 도전</h3>
+    <ul style="font-size:14px; line-height:1.8; padding-left:20px; color:var(--text-2);">
+      <li>Snapdragon 865 + 12GB RAM — LLM 추론은 가능하지만 토큰 속도 느림</li>
+      <li>발열 → 추론 시간 제한 필요 (대화당 토큰 수 제한)</li>
+      <li>ARCore 지원 확인 필수 (지원 기기)</li>
+      <li>대안: 첫 단계는 클라우드 API → 점진적으로 온디바이스 전환</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 통계 -->
+<div class="tab-content" id="tab-stats">
+  <div class="chart-card">
+    <div class="chart-title">주차별 학습 시간 (시간)</div>
+    <div class="month-bars" id="hours-chart"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">주차별 GitHub 커밋</div>
+    <div class="month-bars" id="commits-chart"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">주차별 진도율 (%)</div>
+    <div class="month-bars" id="progress-chart"></div>
+  </div>
+  <div class="actions">
+    <button id="export-json" class="primary">💾 전체 데이터 백업 (JSON)</button>
+    <button id="import-json">📥 데이터 복원</button>
+    <button id="reset-all" class="danger">⚠️ 전체 초기화</button>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- 프롬프트 -->
+<div class="tab-content" id="tab-prompts">
+  <div id="prompts-container"></div>
+</div>
+
+<footer>
+  데이터는 이 브라우저에만 저장됩니다 · 매월 말 JSON 백업 필수 · v2.0
+</footer>
+
+</div>
+
+<script>
+// ============= 데이터 (개인 맞춤형 42주) =============
+// 태그: core(핵심학습), project(프로젝트), coding(코테), career(취업), english(영어)
+const WEEKS = [
+  // ========== Phase 1: 빠른 워밍업 + 환경 셋업 (4주, 5/25~6/21) ==========
+  {w:1, phase:1, date:"5/25~5/31", goal:"환경 셋업 + Python 워밍업",
+    context:"기초 있으니 가볍게. 트래커/Claude/GitHub 인프라 구축에 집중",
+    tasks:[
+      {t:"GitHub 레포 learning-journey-2026 생성", tag:"core"},
+      {t:"Claude 학습 파트너 프롬프트 셋업 (Projects)", tag:"core"},
+      {t:"Python 가상환경 + PyTorch 설치 (GPU 확인)", tag:"core"},
+      {t:"PyTorch 60분 블리츠 완료", tag:"core"},
+      {t:"Karpathy NN Zero to Hero 1편 (Micrograd)", tag:"core"},
+      {t:"백준 골드5 감각 회복 — 매일 1문제 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:2, phase:1, date:"6/1~6/7", goal:"PyTorch 손에 익히기",
+    context:"수업으로 ML/DL 기초는 있으니 PyTorch 문법에 집중",
+    tasks:[
+      {t:"PyTorch 공식 튜토리얼 5개 완주", tag:"core"},
+      {t:"MNIST 분류기 처음부터 구현 (튜토리얼 NO)", tag:"core"},
+      {t:"Karpathy NN Zero to Hero 2편 (Makemore)", tag:"core"},
+      {t:"학교 ML/DL 수업 노트 복습 + 정리 블로그", tag:"core"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:3, phase:1, date:"6/8~6/14", goal:"CNN + 첫 블로그",
+    context:"수업에서 배운 CNN 직접 구현해보기",
+    tasks:[
+      {t:"ResNet 논문 읽고 핵심 정리", tag:"core"},
+      {t:"ResNet18 처음부터 구현 (CIFAR-10)", tag:"core"},
+      {t:"CIFAR-10 정확도 90% 이상 달성", tag:"core"},
+      {t:"첫 블로그 글 발행 — 'AI 인턴 도전기 시작'", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:4, phase:1, date:"6/15~6/21", goal:"Phase 1 마무리 + 여름방학 시작",
+    context:"6월 중반 방학 시작. 페이스 한 단계 올릴 준비",
+    tasks:[
+      {t:"Karpathy 3편 시청 (Backprop ninja)", tag:"core"},
+      {t:"PyTorch 학습 정리 블로그 2편", tag:"core"},
+      {t:"5월~6월 회고 + Claude 평가", tag:"career"},
+      {t:"OPIc 학원 등록 또는 강의 결제", tag:"english"},
+      {t:"여름방학 일일 시간표 재설계", tag:"core"}
+    ]
+  },
+
+  // ========== Phase 2: 여름방학 폭주 (방학 11주, 6/22~9/6) ==========
+  {w:5, phase:2, date:"6/22~6/28", goal:"OPIc 시작 + Unity AR 본격",
+    context:"방학 1주. 영어와 Unity를 병행 시작",
+    tasks:[
+      {t:"OPIc 강의 1주차 (오픽노잼/시원스쿨)", tag:"english"},
+      {t:"OPIc 자기소개 + 자주 쓰는 표현 30개", tag:"english"},
+      {t:"Unity Programmer 트랙 마무리", tag:"core"},
+      {t:"Unity AR 강의 본격 시작 (이어서)", tag:"core"},
+      {t:"AR Foundation 공식 문서 정독", tag:"core"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:6, phase:2, date:"6/29~7/5", goal:"Computer Vision + 갤노트20 AR 테스트",
+    context:"OpenCV + 폰 ARCore 동작 확인",
+    tasks:[
+      {t:"OpenCV 기초 10강", tag:"core"},
+      {t:"MediaPipe 공식 튜토리얼", tag:"core"},
+      {t:"갤노트20 개발자 모드 + ARCore 테스트", tag:"project"},
+      {t:"Unity AR 'Hello World' 폰 빌드 성공", tag:"project"},
+      {t:"OPIc 강의 2주차", tag:"english"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:7, phase:2, date:"7/6~7/12", goal:"YOLO + AR 평면 검출",
+    context:"객체 검출과 AR 기능 동시 진행",
+    tasks:[
+      {t:"YOLOv8 공식 문서 + 실습", tag:"core"},
+      {t:"Custom 데이터셋 fine-tuning", tag:"core"},
+      {t:"AR Plane Detection 데모 (Unity)", tag:"project"},
+      {t:"AR에 3D 큐브 띄우기 성공", tag:"project"},
+      {t:"OPIc 강의 3주차 + 답변 녹음 연습", tag:"english"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:8, phase:2, date:"7/13~7/19", goal:"양자화 입문 + OPIc 시험 임박",
+    context:"온디바이스 핵심 기술 시작",
+    tasks:[
+      {t:"PyTorch Quantization 문서 정독", tag:"core"},
+      {t:"Dynamic + Static Quantization 실습", tag:"core"},
+      {t:"ONNX 변환 워크플로 익히기", tag:"core"},
+      {t:"OPIc 모의고사 1회", tag:"english"},
+      {t:"OPIc 단골 주제 10개 답변 외우기", tag:"english"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:9, phase:2, date:"7/20~7/26", goal:"OPIc 시험 + TFLite 모바일 배포",
+    context:"OPIc 시험 보고 모바일 ML 배포 첫 경험",
+    tasks:[
+      {t:"OPIc 시험 응시 (IH/AL 목표)", tag:"english"},
+      {t:"MobileNet fine-tuning + INT8 양자화", tag:"core"},
+      {t:"안드로이드 스튜디오 셋업", tag:"project"},
+      {t:"TFLite 모델 갤노트20에 배포 성공", tag:"project"},
+      {t:"폰에서 실시간 이미지 분류 동작", tag:"project"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:10, phase:2, date:"7/27~8/2", goal:"7월 회고 + 메인 프로젝트 직전 정비",
+    context:"기술적으로 모든 준비 완료. 메인 프로젝트 기획 직전",
+    tasks:[
+      {t:"7월 학습 회고 + Claude 종합 평가", tag:"career"},
+      {t:"하반기 채용 공고 모니터링 시작 (잡코리아/링커리어)", tag:"career"},
+      {t:"메인 프로젝트 아이디어 구체화", tag:"project"},
+      {t:"llama.cpp Android 리서치", tag:"project"},
+      {t:"기술 블로그 글 1편 (양자화 정리)", tag:"core"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+
+  // ========== Phase 3: 메인 프로젝트 (8월~12월말) ==========
+  {w:11, phase:3, date:"8/3~8/9", goal:"메인 프로젝트 #1 — 기획 + 베이스라인",
+    context:"AR 캐릭터 × LLM 앱 본격 시작! 22주 여정 출발",
+    tasks:[
+      {t:"프로젝트 기획서 작성 (목표 수치 포함)", tag:"project"},
+      {t:"아키텍처 다이어그램 + Claude 리뷰", tag:"project"},
+      {t:"유사 프로젝트 5개 분석 (GitHub)", tag:"project"},
+      {t:"Unity AR 새 프로젝트 생성 + Git 셋업", tag:"project"},
+      {t:"3D 캐릭터 모델 결정 (VRM/Ready Player Me)", tag:"project"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:12, phase:3, date:"8/10~8/16", goal:"AR 캐릭터 표시 베이스라인",
+    context:"폰 화면에 캐릭터가 평면 위에 서있게",
+    tasks:[
+      {t:"AR Plane Detection → 캐릭터 배치", tag:"project"},
+      {t:"3D 캐릭터 임포트 + 머터리얼 적용", tag:"project"},
+      {t:"기본 애니메이션 (Idle) 적용", tag:"project"},
+      {t:"갤노트20에 빌드 + 동작 영상 촬영", tag:"project"},
+      {t:"Phase 3 첫 진행 블로그", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:13, phase:3, date:"8/17~8/23", goal:"LLM 모바일 추론 첫 시도",
+    context:"가장 어려운 부분. 작은 모델부터 시작",
+    tasks:[
+      {t:"llama.cpp Android 빌드 가이드 따라하기", tag:"project"},
+      {t:"Gemma 2B 또는 Qwen 1.5B GGUF 다운로드", tag:"project"},
+      {t:"폰에서 LLM 텍스트 추론 첫 성공", tag:"project"},
+      {t:"토큰 속도 측정 + 발열 체크", tag:"project"},
+      {t:"트러블슈팅 블로그 글", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:14, phase:3, date:"8/24~8/30", goal:"LLM ↔ Unity 통합 + 8월 마무리",
+    context:"AR 캐릭터와 LLM 응답 연결",
+    tasks:[
+      {t:"Unity ↔ Android 네이티브 플러그인 작성", tag:"project"},
+      {t:"텍스트 입력 → LLM 응답 → UI 표시", tag:"project"},
+      {t:"캐릭터 위에 말풍선 UI", tag:"project"},
+      {t:"8월 종합 회고 + 9월 계획 (인턴 지원!)", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+
+  // 9월 - 하반기 인턴 지원 + 음성 통합
+  {w:15, phase:3, date:"8/31~9/6", goal:"하반기 인턴 자소서 + 음성 시작",
+    context:"방학 마지막 주. 인턴 지원 본격화",
+    tasks:[
+      {t:"하반기 인턴 채용공고 5개 정리", tag:"career"},
+      {t:"자소서 초안 작성 (현재 프로젝트 진행상황 활용)", tag:"career"},
+      {t:"Claude 자소서 첨삭 3회", tag:"career"},
+      {t:"Android SpeechRecognizer 통합 (한국어 STT)", tag:"project"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:16, phase:3, date:"9/7~9/13", goal:"개강 + 인턴 지원 + TTS",
+    context:"학기 시작. 학교와 병행 모드. 시간 관리 중요",
+    tasks:[
+      {t:"하반기 인턴 3곳 이상 지원", tag:"career"},
+      {t:"Android TextToSpeech 통합 (한국어)", tag:"project"},
+      {t:"음성 → LLM → 음성 파이프라인 첫 동작", tag:"project"},
+      {t:"중간 데모 영상 30초 (포트폴리오용)", tag:"project"},
+      {t:"매일 1코테 (5문제, 학기 페이스)", tag:"coding"}
+    ]
+  },
+  {w:17, phase:3, date:"9/14~9/20", goal:"인턴 면접 대비 + 캐릭터 입모양",
+    context:"인턴 서류 통과 시 대비",
+    tasks:[
+      {t:"CS 면접 노트 시작 (자료구조)", tag:"career"},
+      {t:"프로젝트 1분 발표 스크립트", tag:"career"},
+      {t:"Claude 모의면접 1회", tag:"career"},
+      {t:"캐릭터 입모양 동기화 (간단 버전)", tag:"project"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:18, phase:3, date:"9/21~9/27", goal:"하반기 인턴 면접 시즌",
+    context:"인턴 결과 나오는 시기. 일정 가변적",
+    tasks:[
+      {t:"실제 면접 (해당 시) / 추가 지원", tag:"career"},
+      {t:"CS 면접 노트 (알고리즘)", tag:"career"},
+      {t:"LLM 응답 시간 최적화 (캐싱/스트리밍)", tag:"project"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:19, phase:3, date:"9/28~10/4", goal:"9월 회고 + 캐릭터 감정 표현",
+    context:"하반기 인턴 결과 종합. 다음 단계 결정",
+    tasks:[
+      {t:"9월 종합 회고 (인턴 결과 반영)", tag:"career"},
+      {t:"캐릭터 감정 애니메이션 (행복/놀람/슬픔)", tag:"project"},
+      {t:"LLM 응답에서 감정 태그 추출", tag:"project"},
+      {t:"CS 면접 노트 (OS)", tag:"career"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:20, phase:3, date:"10/5~10/11", goal:"한국어 LLM fine-tuning 시도",
+    context:"성능 향상의 핵심 단계",
+    tasks:[
+      {t:"한국어 데이터셋 수집 (대화 형식)", tag:"project"},
+      {t:"LoRA fine-tuning 시도", tag:"project"},
+      {t:"양자화 후 폰에 재배포", tag:"project"},
+      {t:"성능 측정 (응답 품질/속도)", tag:"project"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:21, phase:3, date:"10/12~10/18", goal:"RAG 추가로 캐릭터 페르소나",
+    context:"캐릭터에 일관된 성격 부여",
+    tasks:[
+      {t:"간단한 RAG 시스템 구현 (메모리)", tag:"project"},
+      {t:"캐릭터 페르소나 프롬프트 설계", tag:"project"},
+      {t:"대화 컨텍스트 유지 (3턴 이상)", tag:"project"},
+      {t:"중간 데모 영상 1분 v2", tag:"project"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:22, phase:3, date:"10/19~10/25", goal:"중간고사 대비 + 가벼운 진행",
+    context:"학교 중간고사 기간. 페이스 줄이고 학교 우선",
+    tasks:[
+      {t:"학교 중간고사 집중", tag:"core"},
+      {t:"프로젝트 진행 — 버그 수정 위주", tag:"project"},
+      {t:"매일 1코테 (3문제)", tag:"coding"}
+    ]
+  },
+  {w:23, phase:3, date:"10/26~11/1", goal:"중간고사 후 복귀 + 성능 측정",
+    context:"중간고사 끝. 페이스 회복",
+    tasks:[
+      {t:"전체 시스템 성능 측정 (벤치마크)", tag:"project"},
+      {t:"발열/배터리 측정 + 블로그", tag:"project"},
+      {t:"GitHub README 1차 작성", tag:"project"},
+      {t:"10월 회고", tag:"career"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:24, phase:3, date:"11/2~11/8", goal:"공모전/해커톤 신청 + UI 개선",
+    context:"공모전으로 외부 검증 받기",
+    tasks:[
+      {t:"공모전/해커톤 1개 신청 (삼성 SDC 등)", tag:"career"},
+      {t:"AR UI/UX 개선", tag:"project"},
+      {t:"에러 핸들링 추가", tag:"project"},
+      {t:"CS 면접 노트 (네트워크)", tag:"career"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:25, phase:3, date:"11/9~11/15", goal:"사용자 테스트 + 피드백",
+    context:"실사용자 피드백 수집",
+    tasks:[
+      {t:"친구/가족 5명에게 데모 + 피드백", tag:"project"},
+      {t:"피드백 우선순위화 + 반영", tag:"project"},
+      {t:"기술 블로그 시리즈 1편 (설계)", tag:"career"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:26, phase:3, date:"11/16~11/22", goal:"문서화 시작",
+    context:"포트폴리오 자료 본격 제작",
+    tasks:[
+      {t:"기술 블로그 시리즈 2편 (구현)", tag:"career"},
+      {t:"README 완성 (스크린샷/뱃지/사용법)", tag:"project"},
+      {t:"코드 리팩토링 + 주석", tag:"project"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:27, phase:3, date:"11/23~11/29", goal:"발표 영상 + 슬라이드",
+    context:"면접용 자료 완성",
+    tasks:[
+      {t:"기술 블로그 시리즈 3편 (최적화)", tag:"career"},
+      {t:"데모 영상 1분 완성 (자막 포함)", tag:"project"},
+      {t:"발표 슬라이드 5분/10분 버전", tag:"career"},
+      {t:"포트폴리오 Notion 공개 페이지", tag:"career"},
+      {t:"매일 1코테 (5문제)", tag:"coding"}
+    ]
+  },
+  {w:28, phase:3, date:"11/30~12/6", goal:"기말고사 대비 + 가벼운 정리",
+    context:"학교 기말고사 시작. 학교 우선",
+    tasks:[
+      {t:"학교 기말고사 집중", tag:"core"},
+      {t:"프로젝트 마지막 점검 (기능 동결)", tag:"project"},
+      {t:"매일 1코테 (3문제)", tag:"coding"}
+    ]
+  },
+  {w:29, phase:3, date:"12/7~12/13", goal:"기말 마무리 + 보조 프로젝트 기획",
+    context:"기말 끝. 메인 외 보조 프로젝트 시작",
+    tasks:[
+      {t:"기말 마무리", tag:"core"},
+      {t:"보조 프로젝트 기획 (CV 또는 NLP)", tag:"project"},
+      {t:"메인 프로젝트 SNS 공유 + 피드백", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:30, phase:3, date:"12/14~12/20", goal:"보조 프로젝트 진행",
+    context:"기술 다양성 어필을 위한 작은 프로젝트",
+    tasks:[
+      {t:"보조 프로젝트 50% 진행", tag:"project"},
+      {t:"메인 프로젝트 GitHub Star 모으기 활동", tag:"career"},
+      {t:"12월 회고", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:31, phase:3, date:"12/21~12/27", goal:"보조 프로젝트 완성",
+    context:"두 번째 프로젝트도 GitHub에",
+    tasks:[
+      {t:"보조 프로젝트 완성 + GitHub", tag:"project"},
+      {t:"보조 프로젝트 블로그 1편", tag:"career"},
+      {t:"연말 종합 회고 작성", tag:"career"},
+      {t:"매일 1코테 (7문제)", tag:"coding"}
+    ]
+  },
+  {w:32, phase:3, date:"12/28~1/3", goal:"Phase 3 평가 + 새해 계획",
+    context:"7개월 마라톤 마무리",
+    tasks:[
+      {t:"메인 + 보조 프로젝트 최종 점검", tag:"project"},
+      {t:"포트폴리오 전체 리뷰", tag:"career"},
+      {t:"2027 1월~3월 계획", tag:"career"},
+      {t:"Phase 3 졸업 체크리스트", tag:"core"}
+    ]
+  },
+
+  // ========== Phase 4: 상반기 공채 직격 (1~3월) ==========
+  {w:33, phase:4, date:"1/4~1/10", goal:"GSAT/SW 테스트 시작 + 코테 부활",
+    context:"3월 공채까지 8주. 본격 채용 준비",
+    tasks:[
+      {t:"GSAT 기출 1회 (수리/추리)", tag:"career"},
+      {t:"삼성 SW 역량 테스트 기출 분석", tag:"career"},
+      {t:"백준 골드 IV 복귀 (매일 3문제)", tag:"coding"},
+      {t:"채용 공고 캘린더 (삼성/LG/네이버/카카오)", tag:"career"},
+      {t:"보조 프로젝트 보강 (시간 남으면)", tag:"project"}
+    ]
+  },
+  {w:34, phase:4, date:"1/11~1/17", goal:"자소서 회사별 첫 버전",
+    context:"공채 회사별 자소서 작성 시작",
+    tasks:[
+      {t:"삼성 MX/AI센터 자소서 초안", tag:"career"},
+      {t:"LG CTO 자소서 초안", tag:"career"},
+      {t:"Claude 자소서 첨삭 (회사별 2회씩)", tag:"career"},
+      {t:"GSAT 1회/주", tag:"career"},
+      {t:"백준 매일 3문제", tag:"coding"}
+    ]
+  },
+  {w:35, phase:4, date:"1/18~1/24", goal:"CS 면접 노트 완성",
+    context:"기술 면접 대비 본격화",
+    tasks:[
+      {t:"CS 면접 노트 (자료구조 완성)", tag:"career"},
+      {t:"CS 면접 노트 (알고리즘 완성)", tag:"career"},
+      {t:"네이버랩스 자소서 초안", tag:"career"},
+      {t:"GSAT 1회/주", tag:"career"},
+      {t:"백준 골드 III 도전", tag:"coding"}
+    ]
+  },
+  {w:36, phase:4, date:"1/25~1/31", goal:"1월 마무리 + 모의면접",
+    context:"면접 실전 감각 키우기",
+    tasks:[
+      {t:"CS 면접 노트 (OS/네트워크 완성)", tag:"career"},
+      {t:"Claude 모의면접 3회 (회사별)", tag:"career"},
+      {t:"1월 회고", tag:"career"},
+      {t:"카카오/SKT 자소서 초안", tag:"career"},
+      {t:"백준 골드 III 안정화", tag:"coding"}
+    ]
+  },
+  {w:37, phase:4, date:"2/1~2/7", goal:"자소서 최종 + 답변 완성",
+    context:"자소서 완성도 끌어올리기",
+    tasks:[
+      {t:"전 회사 자소서 최종본 완성", tag:"career"},
+      {t:"주변 사람 자소서 리뷰 (3명)", tag:"career"},
+      {t:"예상 질문 50개 답변 정리", tag:"career"},
+      {t:"프로젝트 1분/3분/10분 발표 연습", tag:"career"},
+      {t:"백준 매일 3문제", tag:"coding"}
+    ]
+  },
+  {w:38, phase:4, date:"2/8~2/14", goal:"GSAT 실전 모의 + 약점 보강",
+    context:"GSAT 실전 컨디션",
+    tasks:[
+      {t:"GSAT 실전 모의 2회", tag:"career"},
+      {t:"틀린 유형 집중 풀이", tag:"career"},
+      {t:"Claude 압박면접 시뮬레이션", tag:"career"},
+      {t:"코딩 라이브 연습 (말하면서 풀기)", tag:"coding"},
+      {t:"2월 중간 회고", tag:"career"}
+    ]
+  },
+  {w:39, phase:4, date:"2/15~2/21", goal:"공채 임박 — 컨디션 조정",
+    context:"3월 공채 임박. 신체 컨디션도 중요",
+    tasks:[
+      {t:"최종 포트폴리오 점검", tag:"career"},
+      {t:"수면 패턴 정상화 (시험 시간 맞춤)", tag:"career"},
+      {t:"운동 루틴 (스트레스 관리)", tag:"career"},
+      {t:"마지막 모의면접 2회", tag:"career"},
+      {t:"백준 가벼운 워밍업 (감각 유지)", tag:"coding"}
+    ]
+  },
+  {w:40, phase:4, date:"2/22~2/28", goal:"삼성 공채 지원!",
+    context:"드디어 본 게임. 실수 없이",
+    tasks:[
+      {t:"삼성 공채 지원 (마감 확인 필수)", tag:"career"},
+      {t:"LG 공채 지원 (오픈 시)", tag:"career"},
+      {t:"기타 회사 동시 지원", tag:"career"},
+      {t:"지원 내역 정리표", tag:"career"},
+      {t:"GSAT 실전 모의 1회", tag:"career"}
+    ]
+  },
+  {w:41, phase:4, date:"3/1~3/7", goal:"GSAT 응시 + 면접 직전",
+    context:"GSAT 결과 후 면접 시즌",
+    tasks:[
+      {t:"GSAT 실전 응시", tag:"career"},
+      {t:"GSAT 후 면접 대비 모드 전환", tag:"career"},
+      {t:"포트폴리오 최종 점검", tag:"career"},
+      {t:"잠 푹 자기 + 컨디션 관리", tag:"career"}
+    ]
+  },
+  {w:42, phase:4, date:"3/8~3/14", goal:"면접 + 12개월 종합 회고",
+    context:"마지막 주. 결과는 노력의 함수",
+    tasks:[
+      {t:"면접 진행 (해당 시)", tag:"career"},
+      {t:"결과별 시나리오 준비 (합격/불합격/대기)", tag:"career"},
+      {t:"감사 인사 + 피드백 요청", tag:"career"},
+      {t:"12개월 종합 회고 블로그 발행", tag:"career"},
+      {t:"휴식 + 자축", tag:"career"}
+    ]
+  }
+];
+
+const PHASE_INFO = {
+  1: {name:"빠른 워밍업", color:"phase-1", weeks:"1-4", desc:"기초 점검 + 인프라"},
+  2: {name:"여름방학 폭주", color:"phase-2", weeks:"5-10", desc:"OPIc + Unity AR + 모바일 ML"},
+  3: {name:"메인 프로젝트 (AR×LLM)", color:"phase-3", weeks:"11-32", desc:"22주 대장정"},
+  4: {name:"상반기 공채 직격", color:"phase-4", weeks:"33-42", desc:"자소서/코테/면접"}
+};
+
+const TAG_LABEL = {
+  core: "핵심학습",
+  project: "프로젝트",
+  coding: "코테",
+  career: "취업",
+  english: "영어"
+};
+
+const PROMPTS = [
+  {title:"주간 회고 (이걸 가장 자주 씁니다)", body:`온디바이스 AI × XR 인턴 준비 중인 동아대 AI 3학년 Week N 회고입니다.
+
+이번 주 학습 로그야. 객관적으로 평가해줘:
+1) 잘한 것 3가지
+2) 부족한 것 3가지
+3) 다음 주 우선순위 조정 제안
+4) 인턴 합격까지 거리 (10점 만점)
+5) 갤노트20 + Unity AR + LLM 메인 프로젝트 진행 적절성
+
+[트래커 자동 복사 내용 붙여넣기]`},
+  {title:"코드 리뷰", body:`역할: 시니어 ML/모바일 엔지니어, 내 코드 리뷰어.
+규칙: 답을 바로 주지 말고 힌트와 질문으로 유도.
+지금 작업: [작업 설명]
+타겟 디바이스: 갤럭시 노트20 울트라 (Snapdragon 865)
+코드: [코드 첨부]`},
+  {title:"자소서 첨삭", body:`역할: 삼성전자 MX사업부 AI 채용 담당자 (15년차).
+지원자 정보: 동아대 AI 3학년, AR 캐릭터+LLM 온디바이스 앱 제작.
+자소서를 1~5점으로 평가하고, 떨어뜨릴 만한 약점 5개 짚어줘.
+
+문항: [자소서 문항]
+답변: [내 답변]`},
+  {title:"모의면접", body:`역할: [회사명] AI팀 시니어 엔지니어.
+내 이력서/프로젝트 보고 깊이 들어가는 기술 질문 10개 던져줘.
+특히 AR 캐릭터 + LLM 프로젝트의 기술적 디테일 물어봐.
+내가 답하면 평가하고 꼬리질문 해줘.
+
+[이력서/프로젝트 첨부]`},
+  {title:"계획 조정", body:`지금 Week N이고, 누적 진행률은 X%야.
+원래 계획은 [내용]이었는데 [상황] 때문에 늦어졌어.
+남은 주차를 어떻게 재구성해야 할지 제안해줘.
+학교 일정: [시험기간 등]`},
+  {title:"아키텍처 리뷰", body:`프로젝트: AR 캐릭터 × LLM 대화 앱
+타겟 디바이스: 갤럭시 노트20 울트라 (12GB RAM, Snapdragon 865)
+제약: 발열 관리, 응답 5초 이내, 한국어 지원
+내 설계 안: [구조도]
+약점, 놓친 점, 더 나은 대안을 비판적으로 제시해줘.`},
+  {title:"막힌 점 진단", body:`프로젝트 진행 중 막혔어:
+시도한 것: [내용]
+에러/현상: [내용]
+환경: [기기/버전]
+어디서부터 디버깅 시작해야 할지 알려줘.`}
+];
+
+const STORAGE_KEY = 'xr_ai_tracker_v2_personalized';
+const CURRENT_WEEK_KEY = 'xr_ai_current_week_v2';
+
+function loadAll() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveAll(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+function getWeek(w) {
+  const data = loadAll();
+  return data[w] || {checks: [], hours: 0, commits: 0, blogs: 0, problems: 0, retro: ''};
+}
+function setWeek(w, state) {
+  const data = loadAll();
+  data[w] = state;
+  saveAll(data);
+}
+
+let currentWeek = parseInt(localStorage.getItem(CURRENT_WEEK_KEY) || '1');
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'dashboard') renderDashboard();
+    if (t.dataset.tab === 'overview') renderOverview();
+    if (t.dataset.tab === 'stats') renderStats();
+  });
+});
+
+const weekSelect = document.getElementById('week-select');
+WEEKS.forEach(w => {
+  const opt = document.createElement('option');
+  opt.value = w.w;
+  opt.textContent = `Week ${w.w} (${w.date}) — ${w.goal}`;
+  weekSelect.appendChild(opt);
+});
+
+function renderWeek(w) {
+  currentWeek = w;
+  localStorage.setItem(CURRENT_WEEK_KEY, String(w));
+  const week = WEEKS.find(x => x.w === w);
+  const state = getWeek(w);
+  if (state.checks.length !== week.tasks.length) {
+    state.checks = week.tasks.map(() => false);
+  }
+  weekSelect.value = w;
+  document.getElementById('phase-badge').textContent = `Phase ${week.phase} · ${PHASE_INFO[week.phase].name}`;
+  document.getElementById('phase-badge').className = 'phase-badge ' + PHASE_INFO[week.phase].color;
+  document.getElementById('week-goal').textContent = week.goal;
+  document.getElementById('week-date').textContent = `📅 ${week.date}`;
+  document.getElementById('week-context').textContent = week.context ? `💡 ${week.context}` : '';
+  const list = document.getElementById('tasks-list');
+  list.innerHTML = '';
+  week.tasks.forEach((task, i) => {
+    const div = document.createElement('label');
+    div.className = 'task' + (state.checks[i] ? ' done' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = state.checks[i];
+    cb.addEventListener('change', () => {
+      state.checks[i] = cb.checked;
+      setWeek(w, state);
+      div.classList.toggle('done', cb.checked);
+      updateProgress(week, state);
+    });
+    const span = document.createElement('span');
+    span.className = 'task-text';
+    const tagSpan = document.createElement('span');
+    tagSpan.className = 'task-tag tag-' + task.tag;
+    tagSpan.textContent = TAG_LABEL[task.tag];
+    span.appendChild(tagSpan);
+    span.appendChild(document.createTextNode(task.t));
+    div.appendChild(cb);
+    div.appendChild(span);
+    list.appendChild(div);
+  });
+  document.getElementById('metric-hours').value = state.hours;
+  document.getElementById('metric-commits').value = state.commits;
+  document.getElementById('metric-blogs').value = state.blogs;
+  document.getElementById('metric-problems').value = state.problems;
+  document.getElementById('retro').value = state.retro;
+  updateProgress(week, state);
+}
+
+function updateProgress(week, state) {
+  const done = state.checks.filter(Boolean).length;
+  const total = week.tasks.length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('week-progress-fill').style.width = pct + '%';
+  document.getElementById('week-progress-text').textContent = `${done} / ${total}`;
+}
+
+weekSelect.addEventListener('change', () => renderWeek(parseInt(weekSelect.value)));
+document.getElementById('prev-week').addEventListener('click', () => {
+  if (currentWeek > 1) renderWeek(currentWeek - 1);
+});
+document.getElementById('next-week').addEventListener('click', () => {
+  if (currentWeek < 42) renderWeek(currentWeek + 1);
+});
+
+['hours','commits','blogs','problems'].forEach(field => {
+  document.getElementById('metric-'+field).addEventListener('change', e => {
+    const state = getWeek(currentWeek);
+    state[field] = parseFloat(e.target.value) || 0;
+    setWeek(currentWeek, state);
+  });
+});
+document.getElementById('retro').addEventListener('blur', e => {
+  const state = getWeek(currentWeek);
+  state.retro = e.target.value;
+  setWeek(currentWeek, state);
+});
+
+document.getElementById('reset-week').addEventListener('click', () => {
+  if (confirm(`Week ${currentWeek} 데이터를 초기화할까요?`)) {
+    const data = loadAll();
+    delete data[currentWeek];
+    saveAll(data);
+    renderWeek(currentWeek);
+  }
+});
+
+document.getElementById('copy-retro-prompt').addEventListener('click', () => {
+  const week = WEEKS.find(x => x.w === currentWeek);
+  const state = getWeek(currentWeek);
+  const done = state.checks.filter(Boolean).length;
+  const text = `온디바이스 AI × XR 인턴 준비 중인 동아대 AI 3학년 Week ${currentWeek} 회고입니다.
+
+이번 주 학습 로그야. 객관적으로 평가해줘:
+1) 잘한 것 3가지
+2) 부족한 것 3가지
+3) 다음 주 우선순위 조정 제안
+4) 인턴 합격까지 거리 (10점 만점)
+
+[Week ${currentWeek} — ${week.goal}]
+컨텍스트: ${week.context}
+- 진도: ${done}/${week.tasks.length} (${Math.round(done/week.tasks.length*100)}%)
+- 학습 시간: ${state.hours}h
+- GitHub 커밋: ${state.commits}회
+- 블로그: ${state.blogs}편
+- 코테: ${state.problems}문제
+
+체크한 과제:
+${week.tasks.map((t, i) => `${state.checks[i]?'✅':'⬜'} [${TAG_LABEL[t.tag]}] ${t.t}`).join('\n')}
+
+회고:
+${state.retro || '(작성 안 함)'}`;
+  copyToClipboard(text);
+});
+
+function renderDashboard() {
+  const data = loadAll();
+  let totalDone = 0, totalTasks = 0, totalHours = 0, totalCommits = 0, totalBlogs = 0, totalProblems = 0;
+  WEEKS.forEach(week => {
+    const s = data[week.w] || {checks: [], hours: 0, commits: 0, blogs: 0, problems: 0};
+    const done = (s.checks || []).filter(Boolean).length;
+    totalDone += done;
+    totalTasks += week.tasks.length;
+    totalHours += s.hours || 0;
+    totalCommits += s.commits || 0;
+    totalBlogs += s.blogs || 0;
+    totalProblems += s.problems || 0;
+  });
+  document.getElementById('total-progress').textContent = Math.round(totalDone/totalTasks*100) + '%';
+  document.getElementById('total-progress-sub').textContent = `${totalDone} / ${totalTasks} 과제`;
+  document.getElementById('current-week').textContent = `Week ${currentWeek}`;
+  const curPhase = WEEKS.find(x => x.w === currentWeek).phase;
+  document.getElementById('current-phase').textContent = `Phase ${curPhase} · ${PHASE_INFO[curPhase].name}`;
+  document.getElementById('total-hours').textContent = totalHours.toFixed(1) + 'h';
+  document.getElementById('total-commits').textContent = totalCommits;
+  document.getElementById('total-blogs').textContent = totalBlogs;
+  document.getElementById('total-problems').textContent = totalProblems;
+
+  const phaseList = document.getElementById('phase-progress-list');
+  phaseList.innerHTML = '';
+  [1,2,3,4].forEach(p => {
+    const phaseWeeks = WEEKS.filter(w => w.phase === p);
+    let done = 0, total = 0;
+    phaseWeeks.forEach(w => {
+      const s = data[w.w] || {checks:[]};
+      done += (s.checks || []).filter(Boolean).length;
+      total += w.tasks.length;
+    });
+    const pct = Math.round(done/total*100);
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom: 14px;';
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+        <span style="font-size:14px;font-weight:500;">Phase ${p} · ${PHASE_INFO[p].name} <span style="color:var(--text-3);font-weight:400;font-size:12px;">(Week ${PHASE_INFO[p].weeks} · ${PHASE_INFO[p].desc})</span></span>
+        <span style="font-size:13px;color:var(--text-2);">${done}/${total} · ${pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    `;
+    phaseList.appendChild(row);
+  });
+}
+
+function renderOverview() {
+  const data = loadAll();
+  const container = document.getElementById('overview-container');
+  container.innerHTML = '';
+  [1,2,3,4].forEach(p => {
+    const phaseWeeks = WEEKS.filter(w => w.phase === p);
+    let done = 0, total = 0;
+    phaseWeeks.forEach(w => {
+      const s = data[w.w] || {checks:[]};
+      done += (s.checks || []).filter(Boolean).length;
+      total += w.tasks.length;
+    });
+    const section = document.createElement('div');
+    section.className = 'phase-section';
+    section.innerHTML = `
+      <div class="phase-title">
+        <span class="phase-badge ${PHASE_INFO[p].color}">Phase ${p}</span>
+        <span>${PHASE_INFO[p].name}</span>
+        <span class="phase-progress">${done}/${total} (${Math.round(done/total*100)}%) · ${PHASE_INFO[p].desc}</span>
+      </div>
+      <div class="week-grid"></div>
+    `;
+    const grid = section.querySelector('.week-grid');
+    phaseWeeks.forEach(w => {
+      const s = data[w.w] || {checks:[], hours:0};
+      const wDone = (s.checks || []).filter(Boolean).length;
+      const pct = Math.round(wDone/w.tasks.length*100);
+      const colorVar = p === 1 ? 'var(--blue)' : p === 2 ? 'var(--teal)' : p === 3 ? 'var(--accent)' : 'var(--pink)';
+      const tile = document.createElement('button');
+      tile.className = 'week-tile';
+      tile.innerHTML = `
+        <div class="week-tile-num">Week ${w.w} · ${w.date}</div>
+        <div class="week-tile-goal">${w.goal}</div>
+        <div class="week-tile-bar"><div class="week-tile-fill" style="width:${pct}%; background:${colorVar};"></div></div>
+        <div class="week-tile-meta">${wDone}/${w.tasks.length} · ${s.hours||0}h</div>
+      `;
+      tile.addEventListener('click', () => {
+        document.querySelector('.tab[data-tab="week"]').click();
+        renderWeek(w.w);
+      });
+      grid.appendChild(tile);
+    });
+    container.appendChild(section);
+  });
+}
+
+function renderStats() {
+  const data = loadAll();
+  renderChart('hours-chart', WEEKS.map(w => {
+    const s = data[w.w] || {hours:0};
+    return {label: `W${w.w}`, value: s.hours || 0, display: (s.hours||0).toFixed(1)+'h'};
+  }));
+  renderChart('commits-chart', WEEKS.map(w => {
+    const s = data[w.w] || {commits:0};
+    return {label: `W${w.w}`, value: s.commits || 0, display: String(s.commits||0)};
+  }));
+  renderChart('progress-chart', WEEKS.map(w => {
+    const s = data[w.w] || {checks:[]};
+    const done = (s.checks || []).filter(Boolean).length;
+    const pct = Math.round(done/w.tasks.length*100);
+    return {label: `W${w.w}`, value: pct, display: pct+'%'};
+  }));
+}
+
+function renderChart(id, items) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  const max = Math.max(1, ...items.map(i => i.value));
+  items.forEach((item, idx) => {
+    const col = document.createElement('div');
+    col.className = 'month-bar-col';
+    col.title = `${item.label}: ${item.display}`;
+    const trk = document.createElement('div');
+    trk.className = 'month-bar-track';
+    const fill = document.createElement('div');
+    fill.className = 'month-bar-fill';
+    fill.style.height = `${(item.value/max)*100}%`;
+    trk.appendChild(fill);
+    col.appendChild(trk);
+    const lbl = document.createElement('div');
+    lbl.className = 'month-bar-label';
+    lbl.textContent = (idx % 4 === 0) ? item.label : '';
+    col.appendChild(lbl);
+    el.appendChild(col);
+  });
+}
+
+document.getElementById('export-json').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(loadAll(), null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `xr-ai-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('import-json').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+document.getElementById('import-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (confirm('현재 데이터를 덮어쓸까요?')) {
+        saveAll(data);
+        renderWeek(currentWeek);
+        renderDashboard();
+        alert('복원 완료');
+      }
+    } catch { alert('파일 형식이 올바르지 않습니다'); }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('reset-all').addEventListener('click', () => {
+  if (confirm('정말 모든 데이터를 삭제할까요? 되돌릴 수 없습니다.')) {
+    if (confirm('한 번 더 확인합니다. 정말로 전체 초기화?')) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CURRENT_WEEK_KEY);
+      currentWeek = 1;
+      renderWeek(1);
+      renderDashboard();
+    }
+  }
+});
+
+function renderPrompts() {
+  const container = document.getElementById('prompts-container');
+  container.innerHTML = '';
+  PROMPTS.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'prompt-card';
+    card.innerHTML = `
+      <div class="prompt-title">${p.title}</div>
+      <div class="prompt-body">${p.body.replace(/</g,'&lt;')}</div>
+      <button class="copy-btn">📋 복사</button>
+    `;
+    card.querySelector('.copy-btn').addEventListener('click', () => copyToClipboard(p.body));
+    container.appendChild(card);
+  });
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => alert('클립보드에 복사됨!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('클립보드에 복사됨!');
+  }
+}
+
+renderWeek(currentWeek);
+renderDashboard();
+renderPrompts();
+</script>
+</body>
+</html>
