@@ -399,6 +399,7 @@
     align-items: center;
     gap: 6px;
     min-width: 0;
+    height: 100%;
   }
   .month-bar-track {
     width: 100%;
@@ -489,7 +490,7 @@
 <header>
   <h1>🎯 AR 캐릭터 × LLM 인턴 합격 트래커</h1>
   <p class="subtitle">동아대 AI 3학년 맞춤 · 2026.05 → 2027.03</p>
-  <div class="my-info">갤노트20 · Python ○ · C++ 홍정모 ○ · 백준 골드5 · Unity 기초 ○ · ML/DL 수업 ○</div>
+  <div class="my-info">갤노트20 · Python ○ · C++ 홍정모 ○ · 프로그래머스 LV2 · Unity 기초 ○ · ML/DL 수업 ○</div>
 </header>
 
 <div class="tabs">
@@ -722,7 +723,7 @@ const WEEKS = [
       {t:"Python 가상환경 + PyTorch 설치 (GPU 확인)", tag:"core"},
       {t:"PyTorch 60분 블리츠 완료", tag:"core"},
       {t:"Karpathy NN Zero to Hero 1편 (Micrograd)", tag:"core"},
-      {t:"백준 골드5 감각 회복 — 매일 1문제 (5문제)", tag:"coding"}
+      {t:"프로그래머스 LV2 매일 1~2문제 (10문제)", tag:"coding"}
     ]
   },
   {w:2, phase:1, date:"6/1~6/7", goal:"PyTorch 손에 익히기",
@@ -1046,7 +1047,7 @@ const WEEKS = [
     tasks:[
       {t:"GSAT 기출 1회 (수리/추리)", tag:"career"},
       {t:"삼성 SW 역량 테스트 기출 분석", tag:"career"},
-      {t:"백준 골드 IV 복귀 (매일 3문제)", tag:"coding"},
+      {t:"프로그래머스 LV2~3 + SWEA D3 매일 2문제", tag:"coding"},
       {t:"채용 공고 캘린더 (삼성/LG/네이버/카카오)", tag:"career"},
       {t:"보조 프로젝트 보강 (시간 남으면)", tag:"project"}
     ]
@@ -1058,7 +1059,7 @@ const WEEKS = [
       {t:"LG CTO 자소서 초안", tag:"career"},
       {t:"Claude 자소서 첨삭 (회사별 2회씩)", tag:"career"},
       {t:"GSAT 1회/주", tag:"career"},
-      {t:"백준 매일 3문제", tag:"coding"}
+      {t:"프로그래머스 + SWEA 매일 3문제", tag:"coding"}
     ]
   },
   {w:35, phase:4, date:"1/18~1/24", goal:"CS 면접 노트 완성",
@@ -1068,7 +1069,7 @@ const WEEKS = [
       {t:"CS 면접 노트 (알고리즘 완성)", tag:"career"},
       {t:"네이버랩스 자소서 초안", tag:"career"},
       {t:"GSAT 1회/주", tag:"career"},
-      {t:"백준 골드 III 도전", tag:"coding"}
+      {t:"프로그래머스 LV3 도전", tag:"coding"}
     ]
   },
   {w:36, phase:4, date:"1/25~1/31", goal:"1월 마무리 + 모의면접",
@@ -1078,7 +1079,7 @@ const WEEKS = [
       {t:"Claude 모의면접 3회 (회사별)", tag:"career"},
       {t:"1월 회고", tag:"career"},
       {t:"카카오/SKT 자소서 초안", tag:"career"},
-      {t:"백준 골드 III 안정화", tag:"coding"}
+      {t:"프로그래머스 LV3 + SWEA D4 안정화", tag:"coding"}
     ]
   },
   {w:37, phase:4, date:"2/1~2/7", goal:"자소서 최종 + 답변 완성",
@@ -1088,7 +1089,7 @@ const WEEKS = [
       {t:"주변 사람 자소서 리뷰 (3명)", tag:"career"},
       {t:"예상 질문 50개 답변 정리", tag:"career"},
       {t:"프로젝트 1분/3분/10분 발표 연습", tag:"career"},
-      {t:"백준 매일 3문제", tag:"coding"}
+      {t:"프로그래머스 + SWEA 매일 3문제", tag:"coding"}
     ]
   },
   {w:38, phase:4, date:"2/8~2/14", goal:"GSAT 실전 모의 + 약점 보강",
@@ -1108,7 +1109,7 @@ const WEEKS = [
       {t:"수면 패턴 정상화 (시험 시간 맞춤)", tag:"career"},
       {t:"운동 루틴 (스트레스 관리)", tag:"career"},
       {t:"마지막 모의면접 2회", tag:"career"},
-      {t:"백준 가벼운 워밍업 (감각 유지)", tag:"coding"}
+      {t:"프로그래머스 가벼운 워밍업 (감각 유지)", tag:"coding"}
     ]
   },
   {w:40, phase:4, date:"2/22~2/28", goal:"삼성 공채 지원!",
@@ -1568,6 +1569,7 @@ function copyToClipboard(text) {
 renderWeek(currentWeek);
 renderDashboard();
 renderPrompts();
+renderStats();
 </script>
 </body>
 </html>
