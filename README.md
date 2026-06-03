@@ -12,7 +12,7 @@
 
 - Unity AR Foundation + llama.cpp Android
 - Gemma 2B / Qwen 1.5B (INT4 양자화)
-- 클라우드 의존 0, 프라이버시 보존
+- 클라우드 의존 X, 프라이버시 보존
 
 ## 4단계 로드맵
 
