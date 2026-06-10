@@ -1,7 +1,5 @@
 # learning-journey-2026
 
-동아대 AI학과 3학년의 2027 상반기 인턴 합격 12개월 학습 여정.
-
 ## 학습 트래커
 
 **[Live Tracker](https://kkandull.github.io/learning-journey-2026/study_tracker_v2.html)**
